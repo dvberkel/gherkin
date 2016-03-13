@@ -13,7 +13,7 @@ def compile(feature, path):
         args = (feature_tags, background_steps, scenario_definition,
                 dialect, path, pickles)
         if scenario_definition['type'] is 'Background':
-            background_steps = _get_background_steps(scenario_definition, path)
+            background_steps = _pickle_steps(scenario_definition, path)
         elif scenario_definition['type'] is 'Scenario':
             _compile_scenario(*args)
         else:
@@ -132,9 +132,9 @@ def _interpolate(name, variable_cells, value_cells):
     return name
 
 
-def _get_background_steps(background, path):
+def _pickle_steps(scenario_definition, path):
     return [_pickle_step(step, path)
-        for step in background['steps']]
+        for step in scenario_definition['steps']]
 
 
 def _pickle_step(step, path):
