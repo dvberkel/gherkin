@@ -7,10 +7,12 @@ function Compiler() {
     var dialect = dialects[feature.language];
 
     var featureTags = feature.tags;
-    var backgroundSteps = getBackgroundSteps(feature.background, path);
+    var backgroundSteps = [];
 
     feature.scenarioDefinitions.forEach(function (scenarioDefinition) {
-      if(scenarioDefinition.type === 'Scenario') {
+      if(scenarioDefinition.type === 'Background') {
+        backgroundSteps = getBackgroundSteps(scenarioDefinition, path);
+      } else if(scenarioDefinition.type === 'Scenario') {
         compileScenario(featureTags, backgroundSteps, scenarioDefinition, dialect, path, pickles);
       } else {
         compileScenarioOutline(featureTags, backgroundSteps, scenarioDefinition, dialect, path, pickles);
@@ -114,13 +116,9 @@ function Compiler() {
   }
 
   function getBackgroundSteps(background, path) {
-    if(background) {
-      return background.steps.map(function (step) {
-        return pickleStep(step, path);
-      });
-    } else {
-      return [];
-    }
+    return background.steps.map(function (step) {
+      return pickleStep(step, path);
+    });
   }
 
   function pickleStep(step, path) {

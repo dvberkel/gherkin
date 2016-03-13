@@ -8,10 +8,12 @@ module Gherkin
         dialect = Dialect.for(feature[:language])
 
         feature_tags = feature[:tags]
-        background_steps = get_background_steps(feature[:background], path)
+        background_steps = []
 
         feature[:scenarioDefinitions].each do |scenario_definition|
-          if(scenario_definition[:type] == :Scenario)
+          if(scenario_definition[:type] == :Background)
+            background_steps = get_background_steps(scenario_definition, path)
+          elsif(scenario_definition[:type] == :Scenario)
             compile_scenario(feature_tags, background_steps, scenario_definition, dialect, path, pickles)
           else
             compile_scenario_outline(feature_tags, background_steps, scenario_definition, dialect, path, pickles)
@@ -116,12 +118,8 @@ module Gherkin
       end
 
       def get_background_steps(background, path)
-        if(background)
-          background[:steps].map do |step|
-            pickle_step(step, path)
-          end
-        else
-          []
+        background[:steps].map do |step|
+          pickle_step(step, path)
         end
       end
 

@@ -277,8 +277,10 @@ module.exports = function AstBuilder () {
         var tags = getTags(header);
         var featureLine = header.getToken('FeatureLine');
         if(!featureLine) return null;
+        var scenarioDefinitions = []
         var background = node.getSingle('Background');
-        var scenariodefinitions = node.getItems('Scenario_Definition');
+        if(background) scenarioDefinitions.push(background);
+        scenarioDefinitions = scenarioDefinitions.concat(node.getItems('Scenario_Definition'));
         var description = getDescription(header);
         var language = featureLine.matchedGherkinDialect;
 
@@ -290,8 +292,7 @@ module.exports = function AstBuilder () {
           keyword: featureLine.matchedKeyword,
           name: featureLine.matchedText,
           description: description,
-          background: background,
-          scenarioDefinitions: scenariodefinitions,
+          scenarioDefinitions: scenarioDefinitions,
           comments: comments
         };
       default:
@@ -5863,10 +5864,12 @@ function Compiler() {
     var dialect = dialects[feature.language];
 
     var featureTags = feature.tags;
-    var backgroundSteps = getBackgroundSteps(feature.background, path);
+    var backgroundSteps = [];
 
     feature.scenarioDefinitions.forEach(function (scenarioDefinition) {
-      if(scenarioDefinition.type === 'Scenario') {
+      if(scenarioDefinition.type === 'Background') {
+        backgroundSteps = getBackgroundSteps(scenarioDefinition, path);
+      } else if(scenarioDefinition.type === 'Scenario') {
         compileScenario(featureTags, backgroundSteps, scenarioDefinition, dialect, path, pickles);
       } else {
         compileScenarioOutline(featureTags, backgroundSteps, scenarioDefinition, dialect, path, pickles);
@@ -5970,13 +5973,9 @@ function Compiler() {
   }
 
   function getBackgroundSteps(background, path) {
-    if(background) {
-      return background.steps.map(function (step) {
-        return pickleStep(step, path);
-      });
-    } else {
-      return [];
-    }
+    return background.steps.map(function (step) {
+      return pickleStep(step, path);
+    });
   }
 
   function pickleStep(step, path) {
