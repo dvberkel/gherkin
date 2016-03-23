@@ -14,7 +14,7 @@ all: .compared
 .compared: .built $(TOKENS) $(ASTS) $(PICKLES) $(ERRORS)
 	touch $@
 
-.built: show-version-info src/parser.rs src/main/resources/gherkin/gherkin-languages.json $(RUST_FILES) LICENSE
+.built: show-version-info src/parser.rs lib/gherkin/gherkin-languages.json $(RUST_FILES) LICENSE
 	mvn test
 	touch $@
 
@@ -62,7 +62,7 @@ src/parser.rs: ../gherkin.berp gherkin-java.razor ../bin/berp.exe
 	tail -c +4 $@ > $@.nobom
 	mv $@.nobom $@
 
-src/main/resources/gherkin/gherkin-languages.json: ../gherkin-languages.json
+lib/gherkin/gherkin-languages.json: ../gherkin-languages.json
 	mkdir -p `dirname $@`
 	cp $^ $@
 
@@ -70,8 +70,8 @@ LICENSE: ../LICENSE
 	cp $< $@
 
 clean:
-	rm -rf .compared .built acceptance target src/parser.rs src/main/resources/gherkin/gherkin-languages.json
+	rm -rf .compared .built acceptance target src/parser.rs lib/gherkin/gherkin-languages.json
 .PHONY: clean
 
-update-gherkin-languages: src/main/resources/gherkin/gherkin-languages.json
+update-gherkin-languages: lib/gherkin/gherkin-languages.json
 .PHONY: update-gherkin-languages
