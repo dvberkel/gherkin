@@ -46,8 +46,8 @@ acceptance/testdata/%.feature.errors: ../testdata/%.feature ../testdata/%.featur
 	diff --unified $<.errors $@
 .DELETE_ON_ERROR: acceptance/testdata/%.feature.errors
 
-src/parser.rs: ../gherkin.berp gherkin-java.razor ../bin/berp.exe
-	mono ../bin/berp.exe -g ../gherkin.berp -t gherkin-java.razor -o $@
+src/parser.rs: ../gherkin.berp gherkin-rust.razor ../bin/berp.exe
+	mono ../bin/berp.exe -g ../gherkin.berp -t gherkin-rust.razor -o $@
 	# Remove BOM
 	tail -c +4 $@ > $@.nobom
 	mv $@.nobom $@
