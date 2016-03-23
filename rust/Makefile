@@ -14,7 +14,7 @@ all: .compared
 .compared: .built $(TOKENS) $(ASTS) $(PICKLES) $(ERRORS)
 	touch $@
 
-.built: show-version-info src/main/java/gherkin/Parser.java src/main/resources/gherkin/gherkin-languages.json $(RUST_FILES) LICENSE
+.built: show-version-info src/parser.rs src/main/resources/gherkin/gherkin-languages.json $(RUST_FILES) LICENSE
 	mvn test
 	touch $@
 
@@ -56,7 +56,7 @@ acceptance/testdata/%.feature.errors: ../testdata/%.feature ../testdata/%.featur
 	diff --unified $<.errors $@
 .DELETE_ON_ERROR: acceptance/testdata/%.feature.errors
 
-src/main/java/gherkin/Parser.java: ../gherkin.berp gherkin-java.razor ../bin/berp.exe
+src/parser.rs: ../gherkin.berp gherkin-java.razor ../bin/berp.exe
 	mono ../bin/berp.exe -g ../gherkin.berp -t gherkin-java.razor -o $@
 	# Remove BOM
 	tail -c +4 $@ > $@.nobom
@@ -70,7 +70,7 @@ LICENSE: ../LICENSE
 	cp $< $@
 
 clean:
-	rm -rf .compared .built acceptance target src/main/java/gherkin/Parser.java src/main/resources/gherkin/gherkin-languages.json
+	rm -rf .compared .built acceptance target src/parser.rs src/main/resources/gherkin/gherkin-languages.json
 .PHONY: clean
 
 update-gherkin-languages: src/main/resources/gherkin/gherkin-languages.json
