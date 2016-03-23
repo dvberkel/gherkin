@@ -15,7 +15,7 @@ all: .compared
 	touch $@
 
 .built: show-version-info src/parser.rs lib/gherkin/gherkin-languages.json $(RUST_FILES) LICENSE
-	mvn test
+	cargo test
 	touch $@
 
 show-version-info:
