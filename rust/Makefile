@@ -19,7 +19,7 @@ all: .compared
 	touch $@
 
 show-version-info:
-	java -version
+	rustc --version
 .PHONY: show-version-info
 
 acceptance/testdata/%.feature.tokens: ../testdata/%.feature ../testdata/%.feature.tokens .built
