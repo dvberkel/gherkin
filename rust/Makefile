@@ -6,7 +6,7 @@ ASTS       = $(patsubst ../testdata/%.feature,acceptance/testdata/%.feature.ast.
 PICKLES    = $(patsubst ../testdata/%.feature,acceptance/testdata/%.feature.pickles.json,$(GOOD_FEATURE_FILES))
 ERRORS     = $(patsubst ../testdata/%.feature,acceptance/testdata/%.feature.errors,$(BAD_FEATURE_FILES))
 
-JAVA_FILES = $(shell find . -name "*.java")
+RUST_FILES = $(shell find . -name "*.rs")
 
 all: .compared
 .PHONY: all
@@ -14,7 +14,7 @@ all: .compared
 .compared: .built $(TOKENS) $(ASTS) $(PICKLES) $(ERRORS)
 	touch $@
 
-.built: show-version-info src/main/java/gherkin/Parser.java src/main/resources/gherkin/gherkin-languages.json $(JAVA_FILES) LICENSE
+.built: show-version-info src/main/java/gherkin/Parser.java src/main/resources/gherkin/gherkin-languages.json $(RUST_FILES) LICENSE
 	mvn test
 	touch $@
 
