@@ -3,90 +3,102 @@
 //      Changes to this file may cause incorrect behavior and will be lost if
 //      the code is regenerated.
 
+use token::Token;
 
-package gherkin;
+#[derive(Debug,PartialEq)]
+pub enum TokenType {
+    None,
+    EOF,
+    Empty,
+    Comment,
+    TagLine,
+    FeatureLine,
+    BackgroundLine,
+    ScenarioLine,
+    ScenarioOutlineLine,
+    ExamplesLine,
+    StepLine,
+    DocStringSeparator,
+    TableRow,
+    Language,
+    Other,
+}
 
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+#[allow(non_camel_case_type)]
+pub enum RuleType {
+    None,
+    EOF, // #EOF
+    Empty, // #Empty
+    Comment, // #Comment
+    TagLine, // #TagLine
+    FeatureLine, // #FeatureLine
+    BackgroundLine, // #BackgroundLine
+    ScenarioLine, // #ScenarioLine
+    ScenarioOutlineLine, // #ScenarioOutlineLine
+    ExamplesLine, // #ExamplesLine
+    StepLine, // #StepLine
+    DocStringSeparator, // #DocStringSeparator
+    TableRow, // #TableRow
+    Language, // #Language
+    Other, // #Other
+    Feature, // Feature! := Feature_Header Background? Scenario_Definition*
+    Feature_Header, // Feature_Header! := #Language? Tags? #FeatureLine Feature_Description
+    Background, // Background! := #BackgroundLine Background_Description Scenario_Step*
+    Scenario_Definition, // Scenario_Definition! := Tags? (Scenario | ScenarioOutline)
+    Scenario, // Scenario! := #ScenarioLine Scenario_Description Scenario_Step*
+    ScenarioOutline, // ScenarioOutline! := #ScenarioOutlineLine ScenarioOutline_Description ScenarioOutline_Step* Examples_Definition*
+    Examples_Definition, // Examples_Definition! [#Empty|#Comment|#TagLine-&gt;#ExamplesLine] := Tags? Examples
+    Examples, // Examples! := #ExamplesLine Examples_Description Examples_Table?
+    Examples_Table, // Examples_Table! := #TableRow #TableRow*
+    Scenario_Step, // Scenario_Step := Step
+    ScenarioOutline_Step, // ScenarioOutline_Step := Step
+    Step, // Step! := #StepLine Step_Arg?
+    Step_Arg, // Step_Arg := (DataTable | DocString)
+    DataTable, // DataTable! := #TableRow+
+    DocString, // DocString! := #DocStringSeparator #Other* #DocStringSeparator
+    Tags, // Tags! := #TagLine+
+    Feature_Description, // Feature_Description := Description_Helper
+    Background_Description, // Background_Description := Description_Helper
+    Scenario_Description, // Scenario_Description := Description_Helper
+    ScenarioOutline_Description, // ScenarioOutline_Description := Description_Helper
+    Examples_Description, // Examples_Description := Description_Helper
+    Description_Helper, // Description_Helper := #Empty* Description? #Comment*
+    Description, // Description! := #Other+
+}
 
-import static java.util.Arrays.asList;
+pub trait Builder<T> {
+    fn build(&self, token: Token);
+    fn start_rule(&self, rule_type: RuleType);
+    fn end_rule(&self, rule_type: RuleType);
+    fn get_result(&self) -> T;
+    fn reset(&self);
+}
 
-public class Parser<T> {
-    public enum TokenType {
-        None,
-        EOF,
-        Empty,
-        Comment,
-        TagLine,
-        FeatureLine,
-        BackgroundLine,
-        ScenarioLine,
-        ScenarioOutlineLine,
-        ExamplesLine,
-        StepLine,
-        DocStringSeparator,
-        TableRow,
-        Language,
-        Other,
-        ;
-    }
+pub trait TokenScanner {
+    fn read(&self) -> Token;
+}
 
-    public enum RuleType {
-        None,
-        _EOF, // #EOF
-        _Empty, // #Empty
-        _Comment, // #Comment
-        _TagLine, // #TagLine
-        _FeatureLine, // #FeatureLine
-        _BackgroundLine, // #BackgroundLine
-        _ScenarioLine, // #ScenarioLine
-        _ScenarioOutlineLine, // #ScenarioOutlineLine
-        _ExamplesLine, // #ExamplesLine
-        _StepLine, // #StepLine
-        _DocStringSeparator, // #DocStringSeparator
-        _TableRow, // #TableRow
-        _Language, // #Language
-        _Other, // #Other
-        Feature, // Feature! := Feature_Header Background? Scenario_Definition*
-        Feature_Header, // Feature_Header! := #Language? Tags? #FeatureLine Feature_Description
-        Background, // Background! := #BackgroundLine Background_Description Scenario_Step*
-        Scenario_Definition, // Scenario_Definition! := Tags? (Scenario | ScenarioOutline)
-        Scenario, // Scenario! := #ScenarioLine Scenario_Description Scenario_Step*
-        ScenarioOutline, // ScenarioOutline! := #ScenarioOutlineLine ScenarioOutline_Description ScenarioOutline_Step* Examples_Definition*
-        Examples_Definition, // Examples_Definition! [#Empty|#Comment|#TagLine-&gt;#ExamplesLine] := Tags? Examples
-        Examples, // Examples! := #ExamplesLine Examples_Description Examples_Table?
-        Examples_Table, // Examples_Table! := #TableRow #TableRow*
-        Scenario_Step, // Scenario_Step := Step
-        ScenarioOutline_Step, // ScenarioOutline_Step := Step
-        Step, // Step! := #StepLine Step_Arg?
-        Step_Arg, // Step_Arg := (DataTable | DocString)
-        DataTable, // DataTable! := #TableRow+
-        DocString, // DocString! := #DocStringSeparator #Other* #DocStringSeparator
-        Tags, // Tags! := #TagLine+
-        Feature_Description, // Feature_Description := Description_Helper
-        Background_Description, // Background_Description := Description_Helper
-        Scenario_Description, // Scenario_Description := Description_Helper
-        ScenarioOutline_Description, // ScenarioOutline_Description := Description_Helper
-        Examples_Description, // Examples_Description := Description_Helper
-        Description_Helper, // Description_Helper := #Empty* Description? #Comment*
-        Description, // Description! := #Other+
-        ;
+#[allow(non_snake_case)]
+pub trait ITokenMatcher {
+   fn match_EOF(&self, token: &mut Token) -> bool;
+   fn match_Empty(&self, token: &mut Token) -> bool;
+   fn match_Comment(&self, token: &mut Token) -> bool;
+   fn match_TagLine(&self, token: &mut Token) -> bool;
+   fn match_FeatureLine(&self, token: &mut Token) -> bool;
+   fn match_BackgroundLine(&self, token: &mut Token) -> bool;
+   fn match_ScenarioLine(&self, token: &mut Token) -> bool;
+   fn match_ScenarioOutlineLine(&self, token: &mut Token) -> bool;
+   fn match_ExamplesLine(&self, token: &mut Token) -> bool;
+   fn match_StepLine(&self, token: &mut Token) -> bool;
+   fn match_DocStringSeparator(&self, token: &mut Token) -> bool;
+   fn match_TableRow(&self, token: &mut Token) -> bool;
+   fn match_Language(&self, token: &mut Token) -> bool;
+   fn match_Other(&self, token: &mut Token) -> bool;
+   fn reset(&mut self) -> bool;
+}
 
-        public static RuleType cast(TokenType tokenType) {
-            return RuleType.values()[tokenType.ordinal()];
-        }
-    }
-
-    private final Builder<T> builder;
-
-    public boolean stopAtFirstError;
-
-    class ParserContext {
+/* 
+class ParserContext {
         public final ITokenScanner tokenScanner;
         public final ITokenMatcher tokenMatcher;
         public final Queue<Token> tokenQueue;
@@ -2892,3 +2904,4 @@ public class Parser<T> {
         void reset();
     }
 }
+*/

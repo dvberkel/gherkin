@@ -2,7 +2,6 @@
 //
 //      Changes to this file may cause incorrect behavior and will be lost if
 //      the code is regenerated.
-
 @using Berp;
 @helper CallProduction(ProductionRule production)
 {
@@ -35,42 +34,47 @@
 @helper matchToken(TokenType tokenType)
 {<text>match_@(tokenType)(context, token)</text>}
 
-package gherkin;
+use token::Token;
 
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+#[derive(Debug,PartialEq)]
+pub enum TokenType {
+    None,
+    @foreach(var rule in Model.RuleSet.TokenRules)
+    {<text>    @rule.Name.Replace("#", ""),
+</text>}        
+}
 
-import static java.util.Arrays.asList;
+#[allow(non_camel_case_type)]
+pub enum RuleType {
+    None,
+    @foreach(var rule in Model.RuleSet.Where(r => !r.TempRule))
+    {<text>    @rule.Name.Replace("#", ""), // @rule.ToString(true)
+</text>}        
+}
 
-public class @Model.ParserClassName<T> {
-    public enum TokenType {
-        None,
-        @foreach(var rule in Model.RuleSet.TokenRules)
-        {<text>        @rule.Name.Replace("#", ""),
-</text>}        ;
-    }
+pub trait Builder<T> {
+    fn build(&self, token: Token);
+    fn start_rule(&self, rule_type: RuleType);
+    fn end_rule(&self, rule_type: RuleType);
+    fn get_result(&self) -> T;
+    fn reset(&self);
+}
 
-    public enum RuleType {
-        None,
-        @foreach(var rule in Model.RuleSet.Where(r => !r.TempRule))
-        {<text>        @rule.Name.Replace("#", "_"), // @rule.ToString(true)
-</text>}        ;
+pub trait TokenScanner {
+    fn read(&self) -> Token;
+}
 
-        public static RuleType cast(TokenType tokenType) {
-            return RuleType.values()[tokenType.ordinal()];
-        }
-    }
+#[allow(non_snake_case)]
+pub trait ITokenMatcher {
+    @foreach(var rule in Model.RuleSet.TokenRules)
+   {
+   @:fn match_@(rule.Name.Replace("#", ""))(&self, token: &mut Token) -> bool;
+   }
+   fn reset(&mut self) -> bool;
+}
 
-    private final Builder<T> builder;
-
-    public boolean stopAtFirstError;
-
-    class ParserContext {
+/* 
+class ParserContext {
         public final ITokenScanner tokenScanner;
         public final ITokenMatcher tokenMatcher;
         public final Queue<Token> tokenQueue;
@@ -312,3 +316,4 @@ public class @Model.ParserClassName<T> {
         void reset();
     }
 }
+*/
