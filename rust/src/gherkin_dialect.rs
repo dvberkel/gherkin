@@ -24,18 +24,18 @@ pub struct LanguageSettings {
 }
 
 enum Keywords {
-    and,
-    background,
-    but,
-    examples,
-    feature,
-    given,
-    scenario,
-    scenario_outline,
-    then,
-    when,
-    name,
-    native
+    And,
+    Background,
+    But,
+    Examples,
+    Feature,
+    Given,
+    Scenario,
+    ScenarioOutline,
+    Then,
+    When,
+    Name,
+    Native
 }
 
 impl Deserialize for Keywords {
@@ -51,18 +51,18 @@ impl Deserialize for Keywords {
                 where E: Error
             {
                 match value {
-                    "and" => Ok(Keywords::and),
-                    "background" => Ok(Keywords::background),
-                    "but" => Ok(Keywords::but),
-                    "examples" => Ok(Keywords::examples),
-                    "feature" => Ok(Keywords::feature),
-                    "given" => Ok(Keywords::given),
-                    "scenario" => Ok(Keywords::scenario),
-                    "scenarioOutline" => Ok(Keywords::scenario_outline),
-                    "then" => Ok(Keywords::then),
-                    "when" => Ok(Keywords::when),
-                    "name" => Ok(Keywords::name),
-                    "native" => Ok(Keywords::native),
+                    "and" => Ok(Keywords::And),
+                    "background" => Ok(Keywords::Background),
+                    "but" => Ok(Keywords::But),
+                    "examples" => Ok(Keywords::Examples),
+                    "feature" => Ok(Keywords::Feature),
+                    "given" => Ok(Keywords::Given),
+                    "scenario" => Ok(Keywords::Scenario),
+                    "scenarioOutline" => Ok(Keywords::ScenarioOutline),
+                    "then" => Ok(Keywords::Then),
+                    "when" => Ok(Keywords::When),
+                    "name" => Ok(Keywords::Name),
+                    "native" => Ok(Keywords::Native),
                     _ => Err(Error::custom("expected valid keyword")),
                 }
             }
@@ -102,18 +102,18 @@ impl Visitor for LanguageSettingsVisitor {
         let mut native = None;
         loop {
             match try!(visitor.visit_key()) {
-                Some(Keywords::and) => and = Some(try!(visitor.visit_value())),
-                Some(Keywords::background) => background = Some(try!(visitor.visit_value())),
-                Some(Keywords::but) => but = Some(try!(visitor.visit_value())),
-                Some(Keywords::examples) => examples = Some(try!(visitor.visit_value())),
-                Some(Keywords::feature) => feature = Some(try!(visitor.visit_value())),
-                Some(Keywords::given) => given = Some(try!(visitor.visit_value())),
-                Some(Keywords::scenario) => scenario = Some(try!(visitor.visit_value())),
-                Some(Keywords::scenario_outline) => scenario_outline = Some(try!(visitor.visit_value())),
-                Some(Keywords::then) => then = Some(try!(visitor.visit_value())),
-                Some(Keywords::when) => when = Some(try!(visitor.visit_value())),
-                Some(Keywords::name) => name = Some(try!(visitor.visit_value())),
-                Some(Keywords::native) => native = Some(try!(visitor.visit_value())),
+                Some(Keywords::And) => and = Some(try!(visitor.visit_value())),
+                Some(Keywords::Background) => background = Some(try!(visitor.visit_value())),
+                Some(Keywords::But) => but = Some(try!(visitor.visit_value())),
+                Some(Keywords::Examples) => examples = Some(try!(visitor.visit_value())),
+                Some(Keywords::Feature) => feature = Some(try!(visitor.visit_value())),
+                Some(Keywords::Given) => given = Some(try!(visitor.visit_value())),
+                Some(Keywords::Scenario) => scenario = Some(try!(visitor.visit_value())),
+                Some(Keywords::ScenarioOutline) => scenario_outline = Some(try!(visitor.visit_value())),
+                Some(Keywords::Then) => then = Some(try!(visitor.visit_value())),
+                Some(Keywords::When) => when = Some(try!(visitor.visit_value())),
+                Some(Keywords::Name) => name = Some(try!(visitor.visit_value())),
+                Some(Keywords::Native) => native = Some(try!(visitor.visit_value())),
                 None => break
             }
         }
@@ -184,13 +184,13 @@ impl Visitor for LanguageSettingsVisitor {
     }
 }
 
-pub struct GherkinDialectFactory {
+pub struct GherkinDialectProvider {
     default: String,
     dialects: HashMap<String, GherkinDialect>
 }
 
-impl GherkinDialectFactory {
-    pub fn new_with_default(default: &str) -> Result<GherkinDialectFactory, ParserError> {
+impl GherkinDialectProvider {
+    pub fn new_with_default(default: &str) -> Result<GherkinDialectProvider, ParserError> {
         let settings_file = match File::open("resources/gherkin-languages.json") {
             Ok(settings_file) => settings_file,
             Err(_) => return Err(ParserError::new(ErrorKind::ResourceNotFound("resources/gherkin-languages.json".to_string()), Location::new(1, 1)))
@@ -203,14 +203,14 @@ impl GherkinDialectFactory {
         for (language, language_setting) in language_settings.iter() {
             dialects.insert(language.to_string(), GherkinDialect::new(language.to_string(), language_setting.clone()));
         }
-        Ok(GherkinDialectFactory {
+        Ok(GherkinDialectProvider {
             default: default.to_string(),
             dialects: dialects
         })
     }
 
-    pub fn new() -> Result<GherkinDialectFactory, ParserError> {
-        GherkinDialectFactory::new_with_default("en")
+    pub fn new() -> Result<GherkinDialectProvider, ParserError> {
+        GherkinDialectProvider::new_with_default("en")
     }
 
     pub fn get_dialect(&self, language: &str, location: Location) -> Result<&GherkinDialect, ParserError> {
@@ -271,15 +271,15 @@ impl GherkinDialect {
 
 #[cfg(test)]
 mod test {
-    use super::GherkinDialectFactory;
+    use super::GherkinDialectProvider;
     use ast::Location;
 
     #[test]
     fn create_dialect() {
-        let factory = GherkinDialectFactory::new().unwrap();
+        let factory = GherkinDialectProvider::new().unwrap();
         assert!(factory.get_dialect("es", Location::new(1, 5)).is_ok());
 
-        let factory = GherkinDialectFactory::new_with_default("ru").unwrap();
+        let factory = GherkinDialectProvider::new_with_default("ru").unwrap();
         assert_eq!(factory.get_dialect("ru", Location::new(6, 7)), factory.get_default(Location::new(43, 8)))
     }
 

@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq)]
 pub struct Location {
-    pub line: usize,
-    pub column: usize
+    line: usize,
+    column: usize
 }
 
 impl Location {
@@ -10,5 +10,9 @@ impl Location {
             line: line,
             column: column
         }
+    }
+
+    pub fn get_line(&self) -> usize {
+        self.line
     }
 }

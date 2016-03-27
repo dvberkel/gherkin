@@ -23,6 +23,7 @@ pub enum TokenType {
     Other,
 }
 
+#[allow(non_camel_case_types)]
 pub enum RuleType {
     None,
     Feature, // Feature! := Feature_Header Background? Scenario_Definition*
@@ -50,6 +51,8 @@ pub enum RuleType {
     Description, // Description! := #Other+
 }
 
+
+
 pub trait Builder<T> {
     fn build(&self, token: Token);
     fn start_rule(&self, rule_type: RuleType);
@@ -58,25 +61,26 @@ pub trait Builder<T> {
     fn reset(&self);
 }
 
-pub trait TokenScanner {
-    fn read(&self) -> Token;
+pub trait ITokenScanner {
+    fn read(&mut self) -> Token;
 }
 
 
+#[allow(non_snake_case)]
 pub trait ITokenMatcher {
-    fn match_EOF(&self, token: Token) -> bool;
-    fn match_Empty(&self, token: Token) -> bool;
-    fn match_Comment(&self, token: Token) -> bool;
-    fn match_TagLine(&self, token: Token) -> bool;
-    fn match_FeatureLine(&self, token: Token) -> bool;
-    fn match_BackgroundLine(&self, token: Token) -> bool;
-    fn match_ScenarioLine(&self, token: Token) -> bool;
-    fn match_ScenarioOutlineLine(&self, token: Token) -> bool;
-    fn match_ExamplesLine(&self, token: Token) -> bool;
-    fn match_StepLine(&self, token: Token) -> bool;
-    fn match_DocStringSeparator(&self, token: Token) -> bool;
-    fn match_TableRow(&self, token: Token) -> bool;
-    fn match_Language(&self, token: Token) -> bool;
-    fn match_Other(&self, token: Token) -> bool;
-    fn reset(&self, ) -> bool;
+    fn match_EOF(&self, token: &mut Token) -> bool;
+    fn match_Empty(&self, token: &mut Token) -> bool;
+    fn match_Comment(&self, token: &mut Token) -> bool;
+    fn match_TagLine(&self, token: &mut Token) -> bool;
+    fn match_FeatureLine(&self, token: &mut Token) -> bool;
+    fn match_BackgroundLine(&self, token: &mut Token) -> bool;
+    fn match_ScenarioLine(&self, token: &mut Token) -> bool;
+    fn match_ScenarioOutlineLine(&self, token: &mut Token) -> bool;
+    fn match_ExamplesLine(&self, token: &mut Token) -> bool;
+    fn match_StepLine(&self, token: &mut Token) -> bool;
+    fn match_DocStringSeparator(&self, token: &mut Token) -> bool;
+    fn match_TableRow(&self, token: &mut Token) -> bool;
+    fn match_Language(&self, token: &mut Token) -> bool;
+    fn match_Other(&self, token: &mut Token) -> bool;
+    fn reset(&mut self);
 }

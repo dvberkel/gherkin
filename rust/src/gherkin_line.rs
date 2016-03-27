@@ -1,15 +1,15 @@
 use TITLE_KEYWORD_SEPARATOR;
 use gherkin_line_span::GherkinLineSpan;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct GherkinLine {
-    line_number: u64,
+    line_number: usize,
     line_text: String,
     trimmed_line_text: String
 }
 
 impl GherkinLine {
-    pub fn new(line_text: String, line_number: u64) -> GherkinLine {
+    pub fn new(line_text: String, line_number: usize) -> GherkinLine {
         let trimmed_text = line_text.trim().to_string();
         GherkinLine {
             line_text: line_text,
@@ -48,8 +48,12 @@ impl GherkinLine {
             self.trimmed_line_text.split_at(prefix.len()).1.starts_with(TITLE_KEYWORD_SEPARATOR)
     }
 
-    fn indent(&self) -> usize {
+    pub fn indent(&self) -> usize {
         self.line_text.len() - self.trimmed_line_text.len()
+    }
+
+    pub fn get_full_line_text(self) -> String {
+        self.line_text
     }
 
     pub fn get_table_cells(&self) -> Vec<GherkinLineSpan> {

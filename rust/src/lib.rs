@@ -6,8 +6,15 @@ mod gherkin_line;
 mod gherkin_line_span;
 mod gherkin_dialect;
 mod ast;
+mod token_scanner;
+mod token_matcher;
 
+const TAG_PREFIX:char = '@';
+const COMMENT_PREFIX:&'static str = "#";
 const TITLE_KEYWORD_SEPARATOR:char = ':';
+const TABLE_CELL_SEPARATOR:char = '|';
+const DOCSTRING_SEPARATOR:&'static str = "\"\"\"";
+const DOCSTRING_ALTERNATIVE_SEPARATOR:&'static str = "```";
 
 #[derive(Debug, PartialEq)]
 pub struct ParserError {
