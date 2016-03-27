@@ -1,6 +1,7 @@
 use TITLE_KEYWORD_SEPARATOR;
 use gherkin_line_span::GherkinLineSpan;
 
+#[derive(Debug, PartialEq)]
 pub struct GherkinLine {
     line_number: u64,
     line_text: String,

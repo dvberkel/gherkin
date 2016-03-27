@@ -4,6 +4,7 @@
 
 use token::Token;
 
+#[derive(Debug, PartialEq)]
 pub enum TokenType {
     None,
     EOF,
