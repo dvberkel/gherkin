@@ -14,7 +14,7 @@ all: .compared
 .compared: .built $(TOKENS) $(ASTS) $(PICKLES) $(ERRORS)
 	touch $@
 
-.built: show-version-info src/parser.rs lib/gherkin/gherkin-languages.json $(RUST_FILES) LICENSE
+.built: show-version-info src/generated-parser.rs lib/gherkin/gherkin-languages.json $(RUST_FILES) LICENSE
 	cargo test
 	touch $@
 
@@ -46,7 +46,7 @@ acceptance/testdata/%.feature.errors: ../testdata/%.feature ../testdata/%.featur
 	diff --unified $<.errors $@
 .DELETE_ON_ERROR: acceptance/testdata/%.feature.errors
 
-src/parser.rs: ../gherkin.berp gherkin-rust.razor ../bin/berp.exe
+src/generated-parser.rs: ../gherkin.berp gherkin-rust.razor ../bin/berp.exe
 	mono ../bin/berp.exe -g ../gherkin.berp -t gherkin-rust.razor -o $@
 	# Remove BOM
 	tail -c +4 $@ > $@.nobom
@@ -60,7 +60,7 @@ LICENSE: ../LICENSE
 	cp $< $@
 
 clean:
-	rm -rf .compared .built acceptance target src/parser.rs lib/gherkin/gherkin-languages.json
+	rm -rf .compared .built acceptance target src/generated-parser.rs lib/gherkin/gherkin-languages.json
 .PHONY: clean
 
 update-gherkin-languages: lib/gherkin/gherkin-languages.json
