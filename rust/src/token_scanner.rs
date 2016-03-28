@@ -1,18 +1,18 @@
-use std::io::BufRead;
+use std::io::{BufRead, Lines};
 use parser::{ITokenScanner};
 use ast::Location;
 use token::Token;
 use gherkin_line::GherkinLine;
 
-struct TokenScanner<R:BufRead> {
+pub struct TokenScanner<R:BufRead> {
     line_number: usize,
-    reader: R
+    lines: Lines<R>
 }
 
 impl<R:BufRead> TokenScanner<R> {
     pub fn new(reader: R) -> TokenScanner<R> {
         TokenScanner {
-            reader: reader,
+            lines: reader.lines(),
             line_number: 0
         }
     }
@@ -24,8 +24,8 @@ impl<R: BufRead> ITokenScanner for TokenScanner<R> {
         self.line_number += 1;
         let location = Location::new(self.line_number, 0);
 
-        if self.reader.read_line(&mut line).unwrap() > 0 {
-            Token::new(Some(GherkinLine::new(line, self.line_number)), location)
+        if let Some(line) = self.lines.next() {
+            Token::new(Some(GherkinLine::new(line.unwrap(), self.line_number)), location)
         } else {
             Token::new(None, location)
         }

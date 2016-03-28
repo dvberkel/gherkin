@@ -1,5 +1,9 @@
 extern crate serde;
 extern crate serde_json;
+#[macro_use]
+extern crate lazy_static;
+extern crate regex;
+
 pub mod parser;
 mod token;
 mod gherkin_line;
@@ -9,10 +13,10 @@ mod ast;
 mod token_scanner;
 mod token_matcher;
 
-const TAG_PREFIX:char = '@';
+const TAG_PREFIX:&'static str = "@";
 const COMMENT_PREFIX:&'static str = "#";
-const TITLE_KEYWORD_SEPARATOR:char = ':';
-const TABLE_CELL_SEPARATOR:char = '|';
+const TITLE_KEYWORD_SEPARATOR:&'static str = ":";
+const TABLE_CELL_SEPARATOR:&'static str = "|";
 const DOCSTRING_SEPARATOR:&'static str = "\"\"\"";
 const DOCSTRING_ALTERNATIVE_SEPARATOR:&'static str = "```";
 

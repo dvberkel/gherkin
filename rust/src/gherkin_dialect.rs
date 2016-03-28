@@ -213,19 +213,19 @@ impl GherkinDialectProvider {
         GherkinDialectProvider::new_with_default("en")
     }
 
-    pub fn get_dialect(&self, language: &str, location: Location) -> Result<&GherkinDialect, ParserError> {
+    pub fn get_dialect<'a>(&'a self, language: &str, location: Location) -> Result<&'a GherkinDialect, ParserError> {
         match self.dialects.get(language) {
             Some(dialect) => Ok(dialect),
             None => Err(ParserError::new(ErrorKind::NoSuchLanguage(language.to_string()), location))
         }
     }
 
-    pub fn get_default(&self, location: Location) -> Result<&GherkinDialect, ParserError> {
+    pub fn get_default<'a>(&'a self, location: Location) -> Result<&'a GherkinDialect, ParserError> {
         self.get_dialect(&self.default, location)
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct GherkinDialect {
     language: String,
     feature_keywords: Vec<String>,
@@ -265,6 +265,37 @@ impl GherkinDialect {
             step_keywords: step_keywords
         }
     }
+
+
+
+    pub fn get_language(&self) -> String {
+        self.language.clone()
+    }
+
+    pub fn get_feature_keywords(&self) -> &Vec<String> {
+        &self.feature_keywords
+    }
+
+    pub fn get_background_keywords(&self) -> &Vec<String> {
+        &self.background_keywords
+    }
+
+    pub fn get_scenario_keywords(&self) -> &Vec<String> {
+        &self.scenario_keywords
+    }
+
+    pub fn get_scenario_outline_keywords(&self) -> &Vec<String> {
+        &self.scenario_outline_keywords
+    }
+
+    pub fn get_examples_keywords(&self) -> &Vec<String> {
+        &self.examples_keywords
+    }
+
+    pub fn get_step_keywords(&self) -> &Vec<String> {
+        &self.step_keywords
+    }
+
 }
 
 
@@ -273,6 +304,7 @@ impl GherkinDialect {
 mod test {
     use super::GherkinDialectProvider;
     use ast::Location;
+    
 
     #[test]
     fn create_dialect() {

@@ -78,9 +78,9 @@ pub trait ITokenMatcher {
     fn match_ScenarioOutlineLine(&self, token: &mut Token) -> bool;
     fn match_ExamplesLine(&self, token: &mut Token) -> bool;
     fn match_StepLine(&self, token: &mut Token) -> bool;
-    fn match_DocStringSeparator(&self, token: &mut Token) -> bool;
+    fn match_DocStringSeparator(&mut self, token: &mut Token) -> bool;
     fn match_TableRow(&self, token: &mut Token) -> bool;
-    fn match_Language(&self, token: &mut Token) -> bool;
+    fn match_Language(&mut self, token: &mut Token) -> bool;
     fn match_Other(&self, token: &mut Token) -> bool;
     fn reset(&mut self);
 }

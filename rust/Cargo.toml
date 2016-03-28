@@ -6,3 +6,5 @@ authors = ["Daniel Yule <yule@cs.dal.ca>", "Daan van Berkel <daan.v.berkel.1980@
 [dependencies]
 serde = "*"
 serde_json = "*"
+lazy_static = "0.1"
+regex = "0.1"
