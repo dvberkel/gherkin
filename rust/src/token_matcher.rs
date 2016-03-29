@@ -146,6 +146,7 @@ impl ITokenMatcher for TokenMatcher {
         self.match_TitleLine(token, TokenType::BackgroundLine, self.current_dialect.get_background_keywords())
     }
     fn match_ScenarioLine(&self, token: &mut Token) -> bool{
+        println!("Scenario keywords {:?}", self.current_dialect.get_scenario_keywords());
         self.match_TitleLine(token, TokenType::ScenarioLine, self.current_dialect.get_scenario_keywords())
     }
     fn match_ScenarioOutlineLine(&self, token: &mut Token) -> bool{
@@ -198,6 +199,7 @@ impl ITokenMatcher for TokenMatcher {
                     Some(matcher) => {
                         let language = matcher.at(1).unwrap();
                         self.set_token_matched(token, TokenType::Language, Some(language.to_string()), None, None, None);
+                        println!("Switching language to {:?}", language);
                         self.current_dialect = DIALECT_PROVIDER.get_dialect(language, token.location.clone()).unwrap();
                         true
                     },
@@ -211,6 +213,7 @@ impl ITokenMatcher for TokenMatcher {
         match token.line.clone() {
             Some(line) => {
                 let text = line.get_line_text(self.indent_to_remove);
+                println!("{:?}", self.indent_to_remove);
                 self.set_token_matched(token, TokenType::Other, Some(self.unescape_doc_string(text)), None, None, None);
                 true
             },
@@ -227,62 +230,142 @@ impl ITokenMatcher for TokenMatcher {
 
 #[cfg(test)]
 mod test {
+
+    macro_rules! opt_to_string {
+        ($incoming: expr) => {{
+            let incoming: Option<&str> = $incoming;
+            match incoming {
+                Some(s) => Some(s.to_string()),
+                None => None
+            }
+        }};
+    }
+
     macro_rules! check_and_call {
         ($to_call: path, $this_variant: expr, $expected_type: expr, $token: expr, $matcher: expr, $expected_text: expr, $expected_items: expr, $expected_dialect: expr, $expected_indent: expr, $expected_location: expr) => {
             if $this_variant == $expected_type  {
                 assert!($to_call($matcher, $token));
                 assert_eq!($token.matched_type, $expected_type);
-                assert_eq!($token.matched_text, $expected_text);
+                assert_eq!($token.matched_text, opt_to_string!($expected_text));
                 assert_eq!($token.matched_items, $expected_items);
                 assert_eq!($token.matched_gherkin_dialect, $expected_dialect);
                 assert_eq!($token.matched_indent, $expected_indent);
                 assert_eq!($token.location, $expected_location);
+                true
             } else {
-                assert!(!$to_call($matcher, $token))
+                assert!(!$to_call($matcher, $token));
+                false
             }
         };
     }
 
-    macro_rules! check_token {
-        ($scanner: expr, $matcher: expr, $expected_type: expr, $expected_text: expr, $expected_items: expr, $expected_dialect: expr, $expected_indent: expr, $expected_location: expr) => {
-            {
-                let mut token = $scanner.read();
-                check_and_call!(TokenMatcher::match_EOF, TokenType::EOF, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_Empty, TokenType::Empty, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_Comment, TokenType::Comment, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_TagLine, TokenType::TagLine, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_FeatureLine, TokenType::FeatureLine, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_BackgroundLine, TokenType::BackgroundLine, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_ScenarioLine, TokenType::ScenarioLine, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_ScenarioOutlineLine, TokenType::ScenarioOutlineLine, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_ExamplesLine, TokenType::ExamplesLine, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_StepLine, TokenType::StepLine, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_DocStringSeparator, TokenType::DocStringSeparator, $expected_type, &mut token, &mut $matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_TableRow, TokenType::TableRow, $expected_type, &mut token, &$matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-                check_and_call!(TokenMatcher::match_Language, TokenType::Language, $expected_type, &mut token, &mut $matcher, $expected_text, $expected_items, $expected_dialect, $expected_indent, $expected_location);
-            }
-        };
+    fn check_token(scanner: &mut TokenScanner<Cursor<&[u8]>>, matcher: &mut TokenMatcher, expected_type: TokenType, expected_text: Option<&str>, expected_items: Option<Vec<GherkinLineSpan>>, expected_dialect: &GherkinDialect, expected_indent: usize, expected_location: Location) -> Token {
+        let mut token = scanner.read();
+        let mut has_matched = false;
+        has_matched |= check_and_call!(TokenMatcher::match_EOF, TokenType::EOF, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_Empty, TokenType::Empty, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_TagLine, TokenType::TagLine, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_FeatureLine, TokenType::FeatureLine, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_BackgroundLine, TokenType::BackgroundLine, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_ScenarioLine, TokenType::ScenarioLine, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_ScenarioOutlineLine, TokenType::ScenarioOutlineLine, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_ExamplesLine, TokenType::ExamplesLine, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_StepLine, TokenType::StepLine, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_DocStringSeparator, TokenType::DocStringSeparator, expected_type, &mut token, matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= check_and_call!(TokenMatcher::match_TableRow, TokenType::TableRow, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        let matched_language =  check_and_call!(TokenMatcher::match_Language, TokenType::Language, expected_type, &mut token, matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        has_matched |= matched_language;
+        // A language line looks just like a comment line, so the check for comment will incorrectly complain
+        if !matched_language {
+            has_matched |= check_and_call!(TokenMatcher::match_Comment, TokenType::Comment, expected_type, &mut token, &matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location);
+        }
+        if !has_matched {
+            assert!(check_and_call!(TokenMatcher::match_Other, TokenType::Other, expected_type, &mut token, matcher, expected_text, expected_items, expected_dialect, expected_indent, expected_location));
+        }
+        token
     }
+
+
 
     use std::io::Cursor;
     use token_scanner::TokenScanner;
+    use token::Token;
     use super::{TokenMatcher, DIALECT_PROVIDER};
     use parser::{TokenType, ITokenScanner, ITokenMatcher};
+    use gherkin_dialect::GherkinDialect;
+    use gherkin_line_span::GherkinLineSpan;
     use ast::Location;
     #[test]
-    fn test_name() {
+    fn matching_file() {
         let test_file = r"
-        Given something
-        When something else
-        Then a thing
+        Feature: An example
+            This should just be a random line
+            ```xml
+            <doc>A doc string</doc>
+            ```
+
+        Background:
+            When testing a token scanner
+
+        # A normal scenario
+        Scenario Outline: An example outline
+            Given something <yeah>
+            When something else <oh yeah>
+            Then a thing <thing>
+
+        Examples:
+            | yeah | oh yeah | thing |
+            |67    | 78      |3      |
+
+        # language: af
+        Situasie: An Afrikaans scenario
+            Gegewe We've learned a new language
+            En     We're describing stuff
+            *      Like this
+            Maar   We're oddly bilingual
         ";
         let cursor = Cursor::new(test_file.as_bytes());
         let mut scanner = TokenScanner::new(cursor);
         let mut matcher = TokenMatcher::new();
         let dialect = DIALECT_PROVIDER.get_default(Location::new(1, 0)).unwrap();
-        check_token!(scanner, matcher, TokenType::Empty, None, None, dialect, 0, Location::new(1, 1));
-        check_token!(scanner, matcher, TokenType::StepLine, Some("something".to_string()), None, dialect, 8, Location::new(2, 9));
-        check_token!(scanner, matcher, TokenType::StepLine, Some("something else".to_string()), None, dialect, 8, Location::new(3, 9));
-        check_token!(scanner, matcher, TokenType::StepLine, Some("a thing".to_string()), None, dialect, 8, Location::new(4, 9));
+        let af_dialect = DIALECT_PROVIDER.get_dialect("af", Location::new(1, 0)).unwrap();
+        check_token(&mut scanner, &mut matcher, TokenType::Empty, None, None, dialect, 0, Location::new(1, 1));
+        check_token(&mut scanner, &mut matcher, TokenType::FeatureLine, Some("An example"), None, dialect, 8, Location::new(2, 9));
+        // Descriptive lines after a feature declaration don't have their indents removed.
+        check_token(&mut scanner, &mut matcher, TokenType::Other, Some("            This should just be a random line"), None, dialect, 12, Location::new(3, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::DocStringSeparator, Some("xml"), None, dialect, 12, Location::new(4, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::Other, Some("<doc>A doc string</doc>"), None, dialect, 12, Location::new(5, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::DocStringSeparator, None, None, dialect, 12, Location::new(6, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::Empty, None, None, dialect, 0, Location::new(7, 1));
+        check_token(&mut scanner, &mut matcher, TokenType::BackgroundLine, Some(""), None, dialect, 8, Location::new(8, 9));
+        check_token(&mut scanner, &mut matcher, TokenType::StepLine, Some("testing a token scanner"), None, dialect, 12, Location::new(9, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::Empty, None, None, dialect, 0, Location::new(10, 1));
+        // Comments are also taken in their entirety, instead of just the part after the marker
+        check_token(&mut scanner, &mut matcher, TokenType::Comment, Some("        # A normal scenario"), None, dialect, 0, Location::new(11, 1));
+        check_token(&mut scanner, &mut matcher, TokenType::ScenarioOutlineLine, Some("An example outline"), None, dialect, 8, Location::new(12, 9));
+        check_token(&mut scanner, &mut matcher, TokenType::StepLine, Some("something <yeah>"), None, dialect, 12, Location::new(13, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::StepLine, Some("something else <oh yeah>"), None, dialect, 12, Location::new(14, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::StepLine, Some("a thing <thing>"), None, dialect, 12, Location::new(15, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::Empty, None, None, dialect, 0, Location::new(16, 1));
+        check_token(&mut scanner, &mut matcher, TokenType::ExamplesLine, Some(""), None, dialect, 8, Location::new(17, 9));
+        check_token(&mut scanner, &mut matcher, TokenType::TableRow, None, Some(vec![
+            GherkinLineSpan::new(15, "yeah".to_string()) ,
+            GherkinLineSpan::new(22, "oh yeah".to_string()),
+            GherkinLineSpan::new(32, "thing".to_string())
+        ]), dialect, 12, Location::new(18, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::TableRow, None, Some(vec![
+            GherkinLineSpan::new(14, "67".to_string()) ,
+            GherkinLineSpan::new(22, "78".to_string()),
+            GherkinLineSpan::new(31, "3".to_string())
+        ]), dialect, 12, Location::new(19, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::Empty, None, None, dialect, 0, Location::new(20, 1));
+        check_token(&mut scanner, &mut matcher, TokenType::Language, Some("af"), None, dialect, 8, Location::new(21, 9));
+        check_token(&mut scanner, &mut matcher, TokenType::ScenarioLine, Some("An Afrikaans scenario"), None, af_dialect, 8, Location::new(22, 9));
+        check_token(&mut scanner, &mut matcher, TokenType::StepLine, Some("We've learned a new language"), None, af_dialect, 12, Location::new(23, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::StepLine, Some("We're describing stuff"), None, af_dialect, 12, Location::new(24, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::StepLine, Some("Like this"), None, af_dialect, 12, Location::new(25, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::StepLine, Some("We're oddly bilingual"), None, af_dialect, 12, Location::new(26, 13));
+        check_token(&mut scanner, &mut matcher, TokenType::Empty, None, None, af_dialect, 8, Location::new(27, 9));
+        check_token(&mut scanner, &mut matcher, TokenType::EOF, None, None, af_dialect, 0, Location::new(28, 1));
     }
 }
